@@ -1,0 +1,25 @@
+USB Link - experimental Apple Silicon preview
+
+This build supports USB network devices exposing RNDIS, including compatible
+Android phones and mobile hotspots. Other Android USB modes are not supported.
+
+1. Copy USB Link.app to Applications using the shortcut in this image.
+2. This is an ad-hoc signed, non-notarized local development build. It requires
+   a Mac configured for DriverKit development according to Apple's documentation:
+   https://developer.apple.com/documentation/driverkit/communicating-between-a-driverkit-extension-and-a-client-app
+   Copying the app alone does NOT authorize or activate its system extension.
+3. On a suitably configured development Mac, use the app's install/update action
+   and complete the system's extension approval steps. The app UI is currently
+   primarily Chinese. Installation/activation can interrupt a USB connection.
+4. Connect a data-capable USB cable and enable USB tethering on the Android
+   device if required. The device must expose RNDIS.
+5. Keep the app in Applications. The app can be closed during normal use.
+   Use the app's driver-removal action before removing it from Applications.
+
+This preview is not a general-purpose signed installer. A normally secured
+public distribution needs appropriate Apple-approved entitlements and signing.
+No claim of compatibility with every Android device is made.
+
+GPL-3.0-or-later, without warranty. See LICENSE and NOTICE.md.
+Source.tar.gz contains the corresponding source. BUILD-SOURCE.txt identifies
+its commit. No private signing credentials or debug-symbol archives are included.

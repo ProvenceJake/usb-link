@@ -1,38 +1,49 @@
-# DriverKit 开发说明
+# Development guide
 
-项目介绍、验证范围及已知限制见[仓库 README](../README.md)，来源与修改说明见 [NOTICE](../NOTICE.md)。
+See the [project README](../README.md) for compatibility and limitations, and [NOTICE](../NOTICE.md) for provenance.
 
-## 构建
+## Build a local preview
 
-用完整 Xcode 打开 `TetherKit.xcodeproj`，选择 `TetherKitDriver` scheme。命令行从仓库根目录执行：
+Open `TetherKit.xcodeproj` in full Xcode and select the `TetherKitDriver` scheme, or run from the repository root:
 
 ```sh
 ./DriverKit/build-local-test.sh
 ```
 
-该脚本仅构建和打包，不替换已安装 App，也不会重置 USB 设备。输出为 `Packages/USB-Link-v<CFBundleVersion>-Release.zip` 与对应 `Symbols.zip`。独立 dSYM 的 UUID 会与可执行文件核对，压缩包和本机签名也会校验。
+This produces `Packages/USB-Link-v<driver-build>-Release.zip` and a separate symbols archive. The script verifies local signatures, executable/dSYM UUID pairs, and archive integrity. It does not replace an installed app or reset a device.
 
-脚本使用 arm64；Intel 构建和运行尚未验证。默认配置仍使用原有内部 target / executable 名称 `TetherKitLoader`，界面显示 USB Link。
+Only arm64 builds have been validated. Internal target/executable names remain `TetherKitLoader`; the displayed product name is USB Link.
 
-## 正式签名
+## Signing and installation
 
-创建不纳入版本控制的 `Configs/LocalSigning.xcconfig`：
+The local script deliberately applies ad-hoc signatures. These are not Developer ID signatures, and the preview is not notarized. A DMG is a container, not a way to bypass system-extension authorization.
+
+For development-machine setup, follow [Apple's DriverKit local development example](https://developer.apple.com/documentation/driverkit/communicating-between-a-driverkit-extension-and-a-client-app). Do not assume this build will activate with ordinary security settings on another Mac.
+
+For appropriately provisioned builds, create the ignored file `Configs/LocalSigning.xcconfig`:
 
 ```xcconfig
 DEVELOPMENT_TEAM = YOUR_TEAM_ID
 ANDROID_RNDIS_BUNDLE_PREFIX = com.example.usblink
 ```
 
-为 `.loader` 与 `.driver` 后缀的 Bundle ID 设置对应的签名和授权。DriverKit、NetworkingDriverKit 和 USB transport 权限需要 Apple 批准；如果 Apple 仅批准限定 USB 设备的权限，必须同时调整匹配配置。不能仅通过改 Bundle ID 获得授权。
+Configure matching signing identities and provisioning for the `.loader` and `.driver` bundle identifiers in Xcode. DriverKit, NetworkingDriverKit and USB transport entitlements need Apple approval. If approval is restricted to specific devices, adjust the matching configuration and entitlements accordingly. Changing a bundle identifier does not grant these permissions.
 
-- [Apple：申请 DriverKit 权限](https://developer.apple.com/documentation/driverkit/requesting-entitlements-for-driverkit-development)
-- [Apple：DriverKit 本机开发示例](https://developer.apple.com/documentation/driverkit/communicating-between-a-driverkit-extension-and-a-client-app)
+See [Apple: requesting DriverKit entitlements](https://developer.apple.com/documentation/driverkit/requesting-entitlements-for-driverkit-development). Use Xcode's signing configuration for provisioned builds; `build-local-test.sh` is only the local test path.
 
-`build-local-test.sh` 强制使用 Ad Hoc 签名，仅适合按 Apple 文档配置的本机开发环境；正式签名应在 Xcode 中另行配置。不要把本机测试产物当作可供任意用户直接安装的正式发行包。
+## Package a DMG
 
-## 测试
+Commit the source tree first, then run:
 
-在仓库根目录运行（不执行 USB 重连）：
+```sh
+./DriverKit/package-dmg.sh
+```
+
+This packages the previously built version-7 ZIP with an Applications shortcut, English installation notes, the license and modification notice, and a source archive of HEAD. Only use this script when the ZIP was built from the same driver/app sources as HEAD. It verifies the enclosed app and driver signatures and the DMG checksum. It does not notarize or install anything. The version-7 preview retains app version 1.0/build 1 and driver version 1.0/build 7; the GitHub release tag identifies the distribution revision.
+
+## Tests
+
+From the repository root:
 
 ```sh
 xcodebuild -project DriverKit/TetherKit.xcodeproj \
@@ -42,12 +53,10 @@ xcodebuild -project DriverKit/TetherKit.xcodeproj \
   ARCHS=arm64 ENABLE_DEBUG_DYLIB=NO CODE_SIGNING_ALLOWED=NO test
 ```
 
-单元测试使用 Debug 配置，发行包使用 Release。直接以 Release 运行当前 XCTest target 的模块依赖尚未配置完成。
+Unit tests use Debug; distributable app builds use Release. Direct Release XCTest module dependencies are not currently configured. Unit tests do not perform hardware reconnects.
 
-实机验证应独立覆盖连续重连、上传完整性、操作中关闭 App、取消时序、USB 故障与睡眠唤醒；性能对比使用相同传输量的累计 CPU 时间。运行日志、设备信息和本机验证记录不纳入公开仓库。
+Hardware validation should separately cover repeated reconnects, upload integrity, app closure during operations, cancellation timing, USB failures, and sleep/wake. Compare cumulative CPU time for equal transfer sizes rather than isolated CPU peaks. Keep personal logs and signing configuration out of published source.
 
-## 使用与卸载
+## Removal
 
-完成正确签名和系统批准后，从 App 安装驱动。插入支持 RNDIS 的设备后由系统加载；关闭 App 不影响已建立的驱动连接。请保留承载系统扩展的 App。需要卸载时先使用 App 的“卸载驱动”，按系统提示完成后再删除 App。
-
-支持匹配 RNDIS 类接口，不代表支持全部 Android 设备。ECM/NCM 设备应使用相应协议驱动。Mac 使用的是 USB 网络，设备是否连接 5G 取决于设备自身。
+Use the app's driver-removal action, complete any system prompts, then remove the host app. Keep the host app installed while using the extension.
