@@ -20,6 +20,16 @@ driver="$app/Contents/Library/SystemExtensions/io.local.androidrndis.driver.dext
 codesign --verify --strict "$driver"
 codesign --verify --deep --strict "$app"
 [[ "$(plutil -extract CFBundleVersion raw -o - "$driver/Info.plist")" == 7 ]]
+# Strip debug symbol-table paths from the public copy only, then re-sign it.
+# Runtime code is unchanged; local ZIPs, dSYMs and the installed app are untouched.
+xcrun strip -S "$driver/io.local.androidrndis.driver"
+xcrun strip -S "$app/Contents/MacOS/TetherKitLoader"
+codesign --force --sign - --timestamp=none --generate-entitlement-der \
+  --entitlements DriverKit/TetherKitDriver/TetherKitDriver.entitlements "$driver"
+codesign --force --sign - --timestamp=none --options runtime --generate-entitlement-der \
+  --entitlements DriverKit/TetherKitLoader/TetherKitLoader.entitlements "$app"
+codesign --verify --strict "$driver"
+codesign --verify --deep --strict "$app"
 ln -s /Applications "$stage/contents/Applications"
 cp LICENSE NOTICE.md DriverKit/INSTALL-preview.txt "$stage/contents/"
 git archive --format=tar.gz --prefix=usb-link/ HEAD > "$stage/contents/Source.tar.gz"
