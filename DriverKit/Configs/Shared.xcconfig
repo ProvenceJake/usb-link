@@ -1,0 +1,6 @@
+// Use a bundle prefix registered to the Apple Developer team that signs this app.
+ANDROID_RNDIS_BUNDLE_PREFIX = io.local.androidrndis
+DEVELOPMENT_TEAM =
+CODE_SIGN_STYLE = Automatic
+CODE_SIGN_IDENTITY = Apple Development
+#include? "LocalSigning.xcconfig"

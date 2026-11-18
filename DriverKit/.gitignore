@@ -1,0 +1,10 @@
+build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+.DS_Store
+PROJECT_SUMMARY.md
+docs/notes/ax88179-bundle-extracts/*.plist
+
+/Configs/LocalSigning.xcconfig
+/Build/

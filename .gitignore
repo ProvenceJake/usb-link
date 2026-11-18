@@ -1,0 +1,22 @@
+# Local experiments (not part of the DriverKit distribution)
+/m50-usb
+/m50-usb.dSYM/
+/m50-usb.c
+/m50-connect
+/Makefile
+# Local artifacts and private signing configuration
+.DS_Store
+*.log
+*.xcuserstate
+xcuserdata/
+*.p12
+*.pfx
+*.key
+*.mobileprovision
+*.provisionprofile
+.env
+.env.*
+/DriverKit/Build/
+/DriverKit/Packages/
+/DriverKit/Validation/
+/DriverKit/Configs/LocalSigning.xcconfig
